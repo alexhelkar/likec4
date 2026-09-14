@@ -17,6 +17,7 @@ import { logger } from '@likec4/log'
 import { hasAtLeast, isTruthy } from 'remeda'
 import type { Writable } from 'type-fest'
 import { EDGE_LABEL_MAX_CHARS, EDGE_LABEL_MAX_LINES, wrap } from './dot-labels'
+import { placeEdgeLabel } from './place-edge-label'
 import type { BoundingBox, GraphvizJson, GVPos } from './types-dot'
 import { inchToPx, pointToPx } from './utils'
 
@@ -246,6 +247,12 @@ export function parseGraphvizJson(
     edges.push(
       parseGraphvizEdge(graphvizEdge, computedEdge, view.id),
     )
+  }
+
+  if (view.routing === 'ortho') {
+    for (let i = 0; i < edges.length; i++) {
+      edges[i] = placeEdgeLabel(edges[i]!, nodes)
+    }
   }
 
   return diagram

@@ -1,26 +1,18 @@
 // oxlint-disable exhaustive-deps
 import { vector } from '@likec4/core/geometry'
+import type { EdgeRouting } from '@likec4/core/types'
 import { nonNullable } from '@likec4/core/utils'
 import type { XYPosition } from '@xyflow/react'
 import { getNodeDimensions } from '@xyflow/system'
-import { curveCatmullRomOpen, line as d3line } from 'd3-shape'
 import { shallowEqual } from 'fast-equals'
 import { useCallback } from 'react'
-import { first, isTruthy, last } from 'remeda'
+import { isTruthy } from 'remeda'
 import { useXYStore } from '../../../hooks/useXYFlow'
-import {
-  bezierPath,
-  getNodeIntersectionFromCenterToPoint,
-} from '../../../utils/xyflow'
+import { type DrawnEdge, editedEdgePath, layoutedEdgePath } from '../../../utils/edge-path'
 import type { Types } from '../../types'
 
-const curve = d3line<XYPosition>()
-  .curve(curveCatmullRomOpen.alpha(0.7))
-  .x(d => Math.trunc(d.x))
-  .y(d => Math.trunc(d.y))
-
 /**
- * @returns SVG path data string for relationship edge
+ * @returns SVG path of the relationship edge, with its straight segments under ortho routing
  */
 export function useRelationshipEdgePath({
   props: {
@@ -34,11 +26,13 @@ export function useRelationshipEdgePath({
   },
   controlPoints,
   isControlPointDragging,
+  routing,
 }: {
   props: Types.EdgeProps<'relationship'>
   controlPoints: XYPosition[]
   isControlPointDragging: boolean
-}): string {
+  routing: EdgeRouting
+}): DrawnEdge {
   // Subscribe to mimimal node changes to update edge path when nodes move
   const [
     sourceNodeWidth,
@@ -60,10 +54,6 @@ export function useRelationshipEdgePath({
   )
 
   const isModified = isTruthy(data.controlPoints) || isControlPointDragging
-
-  if (!isModified) {
-    return bezierPath(data.points)
-  }
 
   const sourceCenterPos = vector(sourceX, sourceY).trunc()
   const targetCenterPos = vector(targetX, targetY).trunc()
@@ -87,22 +77,13 @@ export function useRelationshipEdgePath({
     height: targetNodeHeight,
   }
 
-  const nodeMargin = 6
-  const points = data.dir === 'back'
-    ? [
-      targetCenterPos,
-      getNodeIntersectionFromCenterToPoint(targetNd, first(controlPoints) ?? sourceCenterPos, nodeMargin),
-      ...controlPoints,
-      getNodeIntersectionFromCenterToPoint(sourceNd, last(controlPoints) ?? targetCenterPos, nodeMargin),
-      sourceCenterPos,
-    ]
-    : [
-      sourceCenterPos,
-      getNodeIntersectionFromCenterToPoint(sourceNd, first(controlPoints) ?? targetCenterPos, nodeMargin),
-      ...controlPoints,
-      getNodeIntersectionFromCenterToPoint(targetNd, last(controlPoints) ?? sourceCenterPos, nodeMargin),
-      targetCenterPos,
-    ]
-
-  return nonNullable(curve(points))
+  const endpoints = {
+    source: { center: sourceCenterPos.toObject(), node: sourceNd },
+    target: { center: targetCenterPos.toObject(), node: targetNd },
+    dir: data.dir,
+    routing,
+  }
+  return isModified
+    ? editedEdgePath({ ...endpoints, controlPoints })
+    : layoutedEdgePath({ ...endpoints, points: data.points })
 }
