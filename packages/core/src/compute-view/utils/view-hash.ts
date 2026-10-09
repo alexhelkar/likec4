@@ -8,6 +8,8 @@ export function calcViewLayoutHash<V extends ComputedView>(view: SetOptional<V, 
     id: view.id,
     __: view._type ?? 'element',
     autoLayout: view.autoLayout,
+    // Include resolved orthogonal routing while preserving hashes for spline views.
+    ...(view.routing && { routing: view.routing }),
     nodes: pipe(
       view.nodes,
       map(n => ({
@@ -26,6 +28,8 @@ export function calcViewLayoutHash<V extends ComputedView>(view: SetOptional<V, 
         multiple: n.style.multiple ?? null,
         textSize: n.style.textSize ?? null,
         padding: n.style.padding ?? null,
+        // Only when set, to keep existing hashes stable
+        ...(n.style.sizing && { sizing: n.style.sizing }),
         children: n.children,
       })),
       mapToObj(({ id, ...node }) => [id, node]),

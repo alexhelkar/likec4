@@ -16,10 +16,17 @@ import { createRelationExpressionToPredicates } from '../utils/relationExpressio
 import type { ExpandableConnection, ExpandableRelation } from '../utils/relationExpressionToPredicates'
 import { topologicalSort } from '../utils/topological-sort'
 import { calcViewLayoutHash } from '../utils/view-hash'
+import { withResolvedRouting } from '../utils/view-routing'
 import { Memory } from './memory'
 import { predicateToPatch } from './predicates'
 import { StageFinal } from './stages/stage-final'
-import { applyDeploymentViewRuleStyles, buildNodes, deploymentExpressionToPredicate, toComputedEdges } from './utils'
+import {
+  applyDeploymentNavigateTo,
+  applyDeploymentViewRuleStyles,
+  buildNodes,
+  deploymentExpressionToPredicate,
+  toComputedEdges,
+} from './utils'
 
 // deploymentExpressionToPredicate uses FqnExpr (not ModelFqnExpr) — the `as any` bridge
 // is needed because createRelationExpressionToPredicates types the builder for ModelFqnExpr.
@@ -188,9 +195,10 @@ export function computeDeploymentView<M extends AnyAux>(
     edges: computedEdges,
   })
 
-  const nodes = applyDeploymentViewRuleStyles(
+  const nodes = applyDeploymentNavigateTo(
+    likec4model.deployment,
     rules,
-    sorted.nodes,
+    applyDeploymentViewRuleStyles(rules, sorted.nodes),
   )
 
   const autoLayoutRule = findLast(rules, isViewRuleAutoLayout)
@@ -198,7 +206,7 @@ export function computeDeploymentView<M extends AnyAux>(
   const elementNotations = buildElementNotations(nodes)
 
   return calcViewLayoutHash({
-    ...view,
+    ...withResolvedRouting(view, likec4model.$styles.defaults.view.routing),
     [_stage]: 'computed',
     [_type]: 'deployment',
     autoLayout: {

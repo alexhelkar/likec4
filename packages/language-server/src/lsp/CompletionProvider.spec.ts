@@ -77,6 +77,7 @@ describe('LikeC4CompletionProvider', () => {
         'textSize',
         'iconSize',
         'iconPosition',
+        'sizing',
       ],
     })
     await completion({
@@ -93,6 +94,7 @@ describe('LikeC4CompletionProvider', () => {
         'queue',
         'bucket',
         'document',
+        'agent',
       ],
     })
     await completion({
@@ -377,6 +379,7 @@ describe('LikeC4CompletionProvider', () => {
         'description',
         'order',
         'link',
+        'routing',
         'include',
         'exclude',
         'global',
@@ -584,6 +587,7 @@ describe('LikeC4CompletionProvider', () => {
         'textSize',
         'iconSize',
         'iconPosition',
+        'sizing',
       ],
       disposeAfterCheck: true,
     })

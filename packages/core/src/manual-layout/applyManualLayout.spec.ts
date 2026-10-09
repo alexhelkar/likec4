@@ -56,6 +56,28 @@ describe('applyManualLayout', () => {
     expect(result.nodes).toHaveLength(snapshot.nodes.length)
   })
 
+  describe('routing', () => {
+    it('should copy routing from the latest view onto the snapshot without drifts', () => {
+      const { result } = testApplyManualLayout({
+        view: {
+          routing: 'ortho',
+          hash: 'hash-of-latest-view',
+        },
+      })
+      expect(result.routing).toBe('ortho')
+      expect(result.drifts).toBeUndefined()
+      // no drift: the snapshot takes over the latest view's hash
+      expect(result.hash).toBe('hash-of-latest-view')
+    })
+
+    it('should drop routing saved in the snapshot when the latest view has none', () => {
+      const { snapshot, layouted } = prepareFixtures()
+      const result = applyManualLayout(layouted, { ...snapshot, routing: 'ortho' })
+      expect(result).not.toHaveProperty('routing')
+      expect(result.drifts).toBeUndefined()
+    })
+  })
+
   describe('nodes', () => {
     it('should detect nodes-added drift', () => {
       const { result } = testApplyManualLayout({
@@ -110,6 +132,23 @@ describe('applyManualLayout', () => {
 
       expect(nodes.customer.tags).toEqual(['tag-1', 'tag-3'])
       expect(nodes.customer.drifts).toBeUndefined()
+      expect(result.drifts).toBeUndefined()
+    })
+
+    it('should auto-apply navigation changes without layout drift', () => {
+      const target = prepareFixtures().layouted.id
+      const { result, nodes: { customer }, snapshotNodes } = testApplyManualLayout({
+        nodes: {
+          customer: {
+            navigateTo: target,
+          },
+        },
+      })
+
+      expect(customer.navigateTo).toBe(target)
+      expect(customer.x).toBe(snapshotNodes.customer.x)
+      expect(customer.y).toBe(snapshotNodes.customer.y)
+      expect(customer.drifts).toBeUndefined()
       expect(result.drifts).toBeUndefined()
     })
 

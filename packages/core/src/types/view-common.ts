@@ -11,6 +11,7 @@ import type {
   IconPosition,
   IconSize,
   ShapeSize,
+  Sizing,
   SpacingSize,
   TextSize,
 } from './styles'
@@ -38,6 +39,7 @@ export interface AnyViewRuleStyle<Expr> {
     size?: ShapeSize
     padding?: SpacingSize
     textSize?: TextSize
+    sizing?: Sizing
     color?: Color
     shape?: ElementShape
     icon?: scalar.Icon
@@ -91,6 +93,9 @@ export interface ViewAutoLayout {
 
 export type ViewType = 'element' | 'dynamic' | 'deployment'
 
+/** Edge routing of a view: curved `spline` (default) or `ortho` with right-angle bends. */
+export type EdgeRouting = 'spline' | 'ortho'
+
 export interface BaseViewProperties<A extends AnyAux> extends aux.WithOptionalTags<A>, aux.WithOptionalLinks {
   readonly id: aux.StrictViewId<A>
   readonly title: string | null
@@ -99,6 +104,11 @@ export interface BaseViewProperties<A extends AnyAux> extends aux.WithOptionalTa
    * Optional per-view navigation order.
    */
   readonly order?: number
+  /**
+   * Routing mode. Computed and layouted views set it only when it resolves to `ortho`;
+   * when absent, treat it as `spline`.
+   */
+  readonly routing?: EdgeRouting
   /**
    * Source file containing this view, relative to the project root.
    * Undefined if the view is auto-generated.

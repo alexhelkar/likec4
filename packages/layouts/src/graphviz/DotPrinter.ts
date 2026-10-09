@@ -62,7 +62,7 @@ const FontName = 'Arial'
 
 const logger = createLogger('dot')
 
-type ViewToPrint = Pick<ComputedView, 'id' | 'nodes' | 'edges' | 'autoLayout'>
+type ViewToPrint = Pick<ComputedView, 'id' | 'nodes' | 'edges' | 'autoLayout' | 'routing'>
 type NodeOf<V extends ViewToPrint> = V['nodes'][number]
 type EdgeOf<V extends ViewToPrint> = V['edges'][number]
 
@@ -301,6 +301,20 @@ export abstract class DotPrinter<V extends ViewToPrint> {
     return this
   }
 
+  protected get isOrtho(): boolean {
+    return this.view.routing === 'ortho'
+  }
+
+  /**
+   * Returns the Graphviz attribute for an edge label.
+   * Uses `xlabel` for compound endpoints, where `lhead` and `ltail` need external labels.
+   * Also uses `xlabel` for orthogonal routing to preserve labels on same-rank edges and self-loops.
+   * Other edges use `label`.
+   */
+  protected edgeLabelAttr(hasCompoundEndpoint: boolean): typeof _.xlabel | typeof _.label {
+    return hasCompoundEndpoint || this.isOrtho ? _.xlabel : _.label
+  }
+
   protected createGraph(): RootGraphModel {
     const autoLayout = this.view.autoLayout
     const direction = autoLayout.direction
@@ -311,7 +325,7 @@ export abstract class DotPrinter<V extends ViewToPrint> {
       [_.compound]: true,
       [_.rankdir]: direction,
       [_.TBbalance]: 'min',
-      [_.splines]: 'spline',
+      [_.splines]: this.isOrtho ? 'ortho' : 'spline',
       [_.outputorder]: 'nodesfirst',
       [_.nodesep]: pxToInch(autoLayout.nodeSep ?? 110),
       [_.ranksep]: pxToInch(autoLayout.rankSep ?? 120),
@@ -415,6 +429,10 @@ export abstract class DotPrinter<V extends ViewToPrint> {
     node.attributes.set(_.width, pxToInch(width))
     node.attributes.set(_.height, pxToInch(height))
 
+    const isFixed = element.style.sizing === 'fixed'
+    if (isFixed) {
+      node.attributes.set(_.fixedsize, true)
+    }
     if (!this.styles.isDefaultColor(element.color)) {
       const colorValues = this.styles.colors(element.color).elements
       node.attributes.apply({
@@ -447,15 +465,19 @@ export abstract class DotPrinter<V extends ViewToPrint> {
       }
       case 'queue': {
         node.attributes.apply({
-          [_.width]: pxToInch(width),
-          [_.height]: pxToInch(height - 8),
+          ...(!isFixed && {
+            [_.width]: pxToInch(width),
+            [_.height]: pxToInch(height - 8),
+          }),
           [_.margin]: `${pxToInch(hasIcon ? paddingX : paddingX + 4)},${pxToInch(padding)}`,
         })
         break
       }
       case 'component': {
         node.attributes.apply({
-          [_.width]: pxToInch(width + 10),
+          ...(!isFixed && {
+            [_.width]: pxToInch(width + 10),
+          }),
           [_.margin]: `${pxToInch(paddingX + 20)},${pxToInch(padding)}`,
         })
         break

@@ -300,6 +300,12 @@ export function applyManualLayout<
       draft.variant = autoLayouted.variant
     }
 
+    if (autoLayouted.routing) {
+      draft.routing = autoLayouted.routing
+    } else {
+      delete draft.routing
+    }
+
     if (isElementView(autoLayouted) && draft._type === 'element') {
       if (autoLayouted.viewOf) {
         draft.viewOf = autoLayouted.viewOf
@@ -379,6 +385,18 @@ function applyNodesManualLayout(
 
       if (!autoApplyIconStyles(draft, next, sizeNotChanged)) {
         nodeDrifts.add('label-changed')
+      }
+
+      if (changed(node.style.sizing, next.style.sizing)) {
+        if (sizeNotChanged) {
+          if (isNullish(next.style.sizing)) {
+            delete draft.style.sizing
+          } else {
+            draft.style.sizing = next.style.sizing
+          }
+        } else {
+          nodeDrifts.add('label-changed')
+        }
       }
 
       // Only auto-apply if size not changed, and compound state not changed

@@ -10,6 +10,7 @@ import {
 import { type AstNode, type Reference, GrammarUtils, isAstNode, UriUtils } from 'langium'
 import {
   filter,
+  findLast,
   flatMap,
   groupBy,
   isArray,
@@ -33,6 +34,7 @@ import {
   parseAstOpacityProperty,
   parseAstPercent,
   parseAstSizeValue,
+  parseAstSizingValue,
   parseMarkdownAsString,
   toColor,
 } from '../../ast'
@@ -158,6 +160,20 @@ export function parseViewOrder(prop: ast.ViewOrderProperty | undefined): number 
     return undefined
   }
   return Number.isSafeInteger(prop.value) && prop.value >= 0 ? prop.value : undefined
+}
+
+/**
+ * Returns routing from the view property or the last `autoLayout` rule.
+ *
+ * The view property takes precedence. Returns `undefined` when neither defines routing;
+ * project defaults are applied during view computation.
+ */
+export function parseViewRouting(
+  props: ReadonlyArray<ast.ViewProperty | ast.DynamicViewProperty>,
+  rules: ReadonlyArray<ast.ViewRule | ast.DynamicViewRule | ast.DeploymentViewRule>,
+): c4.EdgeRouting | undefined {
+  return props.find(ast.isViewRoutingProperty)?.value
+    ?? findLast(rules, ast.isViewRuleAutoLayout)?.routing
 }
 
 export type Base = GConstructor<BaseParser>
@@ -602,6 +618,12 @@ export class BaseParser {
           case ast.isTextSizeProperty(prop): {
             if (isTruthy(prop.value)) {
               result.textSize = parseAstSizeValue(prop)
+            }
+            break
+          }
+          case ast.isSizingProperty(prop): {
+            if (isTruthy(prop.value)) {
+              result.sizing = parseAstSizingValue(prop)
             }
             break
           }

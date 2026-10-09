@@ -27,12 +27,36 @@ views {
     style cloud.* {
       color primary
     }
-    style events, legacy.backend {
+    style events {
       shape component
+    }
+    style legacy.backend {
+      shape agent
     }
     style events {
       size sm
       textSize xlarge
+    }
+  }
+
+  view ortho-routing of cloud {
+    title 'Orthogonal routing'
+    description 'Edges drawn with right-angle bends; has a manual layout with an edited edge'
+    routing ortho
+
+    include
+      *,
+      ui.*,
+      next.*
+    exclude
+      supportUser,
+      ui.supportPanel
+
+    style cloud {
+      color sky
+    }
+    style cloud.* {
+      color primary
     }
   }
 
