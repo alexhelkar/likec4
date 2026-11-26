@@ -29,7 +29,7 @@ import type {
 import { isString } from '@likec4/core/utils'
 import { type NodeChange, type Rect, getNodeDimensions, nodeToRect } from '@xyflow/system'
 import { produce } from 'immer'
-import { hasAtLeast, isTruthy, mapToObj, omit } from 'remeda'
+import { hasAtLeast, mapToObj, omit } from 'remeda'
 import type { Writable } from 'type-fest'
 import {
   type ActorSystem,
@@ -227,6 +227,7 @@ export const assignXYDataFromView = (view?: DiagramView) =>
       })
     } else {
       assertEvent(event, 'update.view')
+      // xyedges in the event come from editor history, with corners already converted by diagramToXY
       xydata = 'xynodes' in event ? event : convertToXYFlow({
         currentViewId: context.view.id,
         dynamicViewVariant: context.dynamicViewVariant,
